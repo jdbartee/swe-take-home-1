@@ -13,6 +13,13 @@ quality_ids = {
     'poor': 4,
 }
 
+quality_order = {
+    'excellent': 1,
+    'good': 2,
+    'questionable': 3,
+    'poor': 4,
+}
+
 quality_weights = {
     'excellent': 1.0,
     'good': 0.8,
@@ -94,7 +101,8 @@ def create_sample(args):
         cursor.execute(q.insert_quality_with_id, {
             "id": quality_ids[quality],
             "name": quality,
-            "weight": quality_weights[quality]
+            "weight": quality_weights[quality],
+            "order": quality_order[quality]
         })
 
     cursor.execute(q.create_location_table)

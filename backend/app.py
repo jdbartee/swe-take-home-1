@@ -6,6 +6,9 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_mysqldb import MySQL
 import os
+from datetime import datetime
+
+from queries import Queries as q
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
@@ -33,14 +36,66 @@ def get_climate_data():
     
     Returns climate data in the format specified in the API docs.
     """
-    # TODO: Implement this endpoint
-    # 1. Get query parameters from request.args
-    # 2. Validate quality_threshold if provided
-    # 3. Build and execute SQL query with proper JOINs and filtering
-    # 4. Apply quality threshold filtering
-    # 5. Format response according to API specification
+    location_id = request.args.get('location_id', type=int)
+    start_date = request.args.get('start_data', type=str)
+    end_date = request.args.get('end_data', type=str)
+    metric = request.args.get('metric', type=str)
+    quality_threshold = request.args.get('quality_threshold', type=str)
+    page = request.args.get('page', 1, type=int)
+    per_page = 50
+
+    def map_row(row):
+        (id, location_id, location_name, latitude, longitude, date, metric, value, unit, quality) = row
+        return {
+            "id": id,
+            "location_id": location_id,
+            "location_name": location_name,
+            "latitude": latitude,
+            "longitude": longitude,
+            "date": datetime.strftime(date, '%Y-%m-%d'),
+            "metric": metric,
+            "value": value,
+            "unit": unit,
+            "quality": quality
+        }
     
-    return jsonify({"data": [], "meta": {"total_count": 0, "page": 1, "per_page": 50}})
+    cursor = mysql.connection.cursor()
+
+    cursor.execute(q.validate_metric, {'metric': metric})
+    rows = cursor.fetchall()
+    if len(rows) == 1:
+        metric_id = rows[0][0]
+    else:
+        metric_id = None
+        # Could raise Error here
+    
+    cursor.execute(q.validate_quality_threshold, {'quality_threshold': quality_threshold})
+    rows = cursor.fetchall()
+    if len(rows) == 1:
+        quality_threshold_order = rows[0][0]
+    else:
+        quality_threshold_order = None
+        # Could raise Error here
+
+    select_query, count_query, args = q.get_climate_data(
+        location_id,
+        start_date,
+        end_date,
+        metric_id,
+        quality_threshold_order,
+        page,
+        per_page
+    )
+
+    cursor.execute(count_query, args)
+    count = cursor.fetchone()[0]
+
+    cursor.execute(select_query, args)
+    rows = cursor.fetchall()
+    data = [map_row(row) for row in rows]
+    cursor.close()
+    return jsonify({"data": data, "meta": {"total_count": count, "page": page, "per_page": per_page}})
+    
 
 @app.route('/api/v1/locations', methods=['GET'])
 def get_locations():
@@ -49,11 +104,22 @@ def get_locations():
     
     Returns location data in the format specified in the API docs.
     """
-    # TODO: Implement this endpoint
-    # 1. Query the locations table
-    # 2. Format response according to API specification
-    
-    return jsonify({"data": []})
+    def map_row(row):
+        (id, name, country, latitude, longitude, region) = row
+        return {
+            "id": id,
+            "name": name,
+            "country": country,
+            "latitude": latitude,
+            "longitude": longitude,
+            "region": region
+        }
+    cursor = mysql.connection.cursor()
+    cursor.execute(q.get_locations)
+    rows = cursor.fetchall()
+    data = [map_row(row) for row in rows]
+    cursor.close()
+    return jsonify({"data": data})
 
 @app.route('/api/v1/metrics', methods=['GET'])
 def get_metrics():
@@ -62,11 +128,22 @@ def get_metrics():
     
     Returns metric data in the format specified in the API docs.
     """
-    # TODO: Implement this endpoint
-    # 1. Query the metrics table
-    # 2. Format response according to API specification
+    def map_row(row):
+        (id, name, display_name, unit, description) = row
+        return {
+            "id": id,
+            "name": name,
+            "display_name": display_name,
+            "unit": unit,
+            "description": description
+        }
     
-    return jsonify({"data": []})
+    cursor = mysql.connection.cursor()
+    cursor.execute(q.get_metrics)
+    rows = cursor.fetchall()
+    data = [map_row(row) for row in rows]
+    cursor.close()
+    return jsonify({"data": data})
 
 @app.route('/api/v1/summary', methods=['GET'])
 def get_summary():
