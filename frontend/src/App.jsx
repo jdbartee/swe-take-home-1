@@ -19,7 +19,43 @@ function App() {
   });
   const [loading, setLoading] = useState(false);
 
-  // Existing useEffect for locations and metrics
+  // Load Locations
+  useEffect(() => {
+    const load = async () => {
+      try {
+        let endpoint = '/api/v1/locations'
+        const response = await fetch(endpoint)
+        const data = await response.json()
+        setLocations(data.data)
+      }
+      catch {
+        setLocations([])
+        setTimeout(() => {
+          load()
+        }, 3000);
+      }
+    }
+    load();
+  }, []);
+  
+  // Load Metrics
+  useEffect(() => {
+    const load = async () => {
+      try {
+        let endpoint = '/api/v1/metrics'
+        const response = await fetch(endpoint)
+        const data = await response.json()
+        setMetrics(data.data);
+      }
+      catch {
+        setMetrics([])
+        setTimeout(() => {
+          load()
+        }, 3000);
+      }
+    }
+    load();
+  }, []);
 
   // Updated fetch function to handle different analysis types
   const fetchData = async () => {

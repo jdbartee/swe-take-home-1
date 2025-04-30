@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 function Filters({ locations, metrics, filters, onFilterChange, onApplyFilters }) {
   const [localFilters, setLocalFilters] = useState(filters);
@@ -43,6 +43,42 @@ function Filters({ locations, metrics, filters, onFilterChange, onApplyFilters }
         </div>
 
         <div className="md:col-span-2">
+          <label htmlFor="locationFilter" className="block text-sm font-medium text-gray-700 mb-1">
+            Location
+          </label>
+          <select
+            id="locationId"
+            name="locationId"
+            value={localFilters.locationId}
+            onChange={handleChange}
+            className="w-full rounded-md border-gray-300 shadow-sm focus:border-eco-primary focus:ring focus:ring-eco-primary focus:ring-opacity-50"
+          >
+            <option value=""> All Locations </option>
+            { locations.map((location) => {
+              return ( <option value={location.id} key={location.id}> {location.name}, {location.country} </option> )
+            }) }
+          </select>
+        </div>
+
+        <div className="md:col-span-2">
+          <label htmlFor="locationFilter" className="block text-sm font-medium text-gray-700 mb-1">
+            Metric
+          </label>
+          <select
+            id="metric"
+            name="metric"
+            value={localFilters.metric}
+            onChange={handleChange}
+            className="w-full rounded-md border-gray-300 shadow-sm focus:border-eco-primary focus:ring focus:ring-eco-primary focus:ring-opacity-50"
+          >
+            <option value=""> All Metrics </option>
+            { metrics.map((metric) => {
+              return ( <option value={metric.name} key={metric.id}> {metric.display_name} </option> )
+            }) }
+          </select>
+        </div>
+
+        <div className="md:col-span-2">
           <label htmlFor="analysisType" className="block text-sm font-medium text-gray-700 mb-1">
             Analysis
           </label>
@@ -61,6 +97,7 @@ function Filters({ locations, metrics, filters, onFilterChange, onApplyFilters }
         </div>
 
         {/* Existing submit button */}
+        <button type='submit'>Submit</button>
       </form>
     </div>
   );
